@@ -20,7 +20,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
         }
 
         [SetUp]
-        public async Task TearDown()
+        public async Task SetUp()
         {
             await _repository!.TruncateAsync();
             await _repository!.AddAsync(new Car { Brand = "Volvo", Model = "XC40", Color = "Black" });

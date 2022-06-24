@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,8 +49,15 @@ namespace Azure.Data.Tables.EasyRepository
 
         public async Task<TTableEntity?> SingleOrDefaultAsync(string partitionKey, string rowKey, CancellationToken cancellationToken = default)
         {
-            var result = await TableClient.GetEntityAsync<TTableEntity>(partitionKey, rowKey, cancellationToken: cancellationToken);
-            return result.Value;
+            try
+            {
+                var result = await TableClient.GetEntityAsync<TTableEntity>(partitionKey, rowKey, cancellationToken: cancellationToken);
+                return result.Value;
+            }
+            catch (RequestFailedException rfe) when(rfe.Status == (int)HttpStatusCode.NotFound)
+            {
+                return null;
+            }
         }
 
         public Task<IReadOnlyList<TTableEntity>> ToListAsync(CancellationToken cancellationToken = default)
