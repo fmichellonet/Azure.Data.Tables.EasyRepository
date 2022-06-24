@@ -20,6 +20,12 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.100
+    # azurite
+    - name: Install Azurite
+      id: azuright
+      uses: potatoqualitee/azuright@v1.1
+      with:
+        self-signed-cert: true
     # restore dependencies  
     - name: Install dependencies
       run: dotnet restore
