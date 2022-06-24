@@ -27,7 +27,7 @@ jobs:
       run: npm install -g azurite
     - name: Run Azurite in Background
       shell: cmd
-      run: azurite-table
+      run: cmd /c "START azurite-table -s -l"
     # restore dependencies  
     - name: Install dependencies
       run: dotnet restore
