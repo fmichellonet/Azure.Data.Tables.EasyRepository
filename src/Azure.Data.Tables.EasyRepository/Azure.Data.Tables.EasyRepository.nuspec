@@ -2,12 +2,12 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>$id$</id>
-    <version>$version$</version>
+	<version>$version$</version>
     <authors>$authors$</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <description>$description$</description>
-    <tags>Azure Data Tabels;Repository;Dynamic</tags>
+    <tags>Azure Data Tables;Repository;Dynamic</tags>
     <releaseNotes>$releaseNotes$</releaseNotes>
     <projectUrl>https://github.com/fmichellonet/Azure.Data.Tables.EasyRepository</projectUrl>
     <repository type="git" url="https://github.com/fmichellonet/Azure.Data.Tables.EasyRepository.git" />
