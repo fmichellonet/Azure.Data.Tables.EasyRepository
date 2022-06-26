@@ -21,7 +21,7 @@ jobs:
     - name: Archive NuGet Package
       uses: actions/upload-artifact@v1
       with:
-        name: Azure.Data.Tables.EasyRepository.${{ github.event.release.tag_name }}.nupkg
-        path: .\src\Azure.Data.Tables.EasyRepository\bin\Release\Azure.Data.Tables.EasyRepository.${{ github.event.release.tag_name }}.nupkg
+        name: AzureDataTables.EasyRepository.${{ github.event.release.tag_name }}.nupkg
+        path: .\src\Azure.Data.Tables.EasyRepository\bin\Release\AzureDataTables.EasyRepository.${{ github.event.release.tag_name }}.nupkg
     - name: Publish to Nuget.org
-      run: dotnet nuget push .\src\Azure.Data.Tables.EasyRepository\bin\Release\Azure.Data.Tables.EasyRepository.${{ github.event.release.tag_name }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push .\src\Azure.Data.Tables.EasyRepository\bin\Release\AzureDataTables.EasyRepository.${{ github.event.release.tag_name }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
