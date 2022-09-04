@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Dynamitey;
 
 namespace Azure.Data.Tables.EasyRepository
@@ -20,19 +21,31 @@ namespace Azure.Data.Tables.EasyRepository
         public readonly Func<TEntity, string> PartitionKeyExtractor;
 
         public readonly Func<TEntity, string> RowKeyExtractor;
+        
+        private readonly List<Expression<Func<TEntity, object>>> _selectedProps;
+
+        public IReadOnlyCollection<Expression<Func<TEntity, object>>> CustomPropertySerialization => _selectedProps;
 
         public TableEntityAdapter(Func<TEntity, string> partitionKey, Func<TEntity, string> rowKey)
         {
             PartitionKeyExtractor = partitionKey;
             RowKeyExtractor = rowKey;
+            _selectedProps = new List<Expression<Func<TEntity, object>>>();
         }
         
-        public static IReadOnlyList<TEntity> ToEntityList(IReadOnlyCollection<IDictionary<string, object>> dictionary)
+        public TableEntityAdapter<TEntity> UseSerializerFor(Expression<Func<TEntity, object>> selector)
         {
-            return dictionary.Select(ToEntity).ToArray();
+            _selectedProps.Add(selector);
+            return this;
         }
 
-        public static TEntity ToEntity(IDictionary<string, object> dictionary)
+        public static IReadOnlyList<TEntity> ToEntityList(IReadOnlyCollection<IDictionary<string, object>> dictionary,
+            IReadOnlyCollection<Expression<Func<TEntity, object>>> customPropertySerialization)
+        {
+            return dictionary.Select(x => ToEntity(x, customPropertySerialization)).ToArray();
+        }
+
+        public static TEntity ToEntity(IDictionary<string, object> dictionary, IReadOnlyCollection<Expression<Func<TEntity, object>>> customSerializedProperties)
         {
             var tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
             var deserializeMethodName = "Deserialize";
@@ -40,7 +53,9 @@ namespace Azure.Data.Tables.EasyRepository
 
             var binder = Dynamic.InvokeConstructor(tablesTypeBinderType);
             TEntity entity = Dynamic.InvokeMember(binder, new InvokeMemberName(deserializeMethodName, typeof(TEntity)), dictionary);
-            
+
+            dictionary.DeserializeComplexType(customSerializedProperties, entity);
+
             return entity;
         }
 
@@ -59,11 +74,12 @@ namespace Azure.Data.Tables.EasyRepository
         public TableEntity Wrap(TEntity item)
         {
             var dict = new Dictionary<string, object>(ToDictionary(item))
-            {
-                { nameof(PartitionKey), PartitionKeyExtractor(item) },
-                { nameof(RowKey), RowKeyExtractor(item) },
-                { nameof(Timestamp), DateTimeOffset.Now }
-            };
+                {
+                    { nameof(PartitionKey), PartitionKeyExtractor(item) },
+                    { nameof(RowKey), RowKeyExtractor(item) },
+                    { nameof(Timestamp), DateTimeOffset.Now }
+                }.StripComplexTypes(_selectedProps)
+                .SerializeComplexType(_selectedProps, item);
 
             return new TableEntity(dict);
         }

@@ -13,6 +13,7 @@ namespace Azure.Data.Tables.EasyRepository.Internals
             Expression<Func<TableEntityAdapter<T>, bool>>? filter = null,
             int? maxPerPage = null,
             IEnumerable<string> select = null,
+            IReadOnlyCollection<Expression<Func<T, object>>> customPropertySerialization = null,
             CancellationToken cancellationToken = default) where T : class, new()
         {
             return PageableHelpers.CreateEnumerable<T>(
@@ -22,7 +23,7 @@ namespace Azure.Data.Tables.EasyRepository.Internals
 
                     var response = (QueryResponseWithHeader)QueryEntities(tableClient, queryOptions, cancellationToken: cancellationToken);
                     
-                    return ToPageResult<T>(response);
+                    return ToPageResult<T>(response, customPropertySerialization);
                 },
                 (continuationToken, pageSizeHint) =>
                 {
@@ -34,15 +35,15 @@ namespace Azure.Data.Tables.EasyRepository.Internals
                     var response = QueryEntities(tableClient, queryOptions, NextPartitionKey, NextRowKey,
                         cancellationToken);
 
-                    return ToPageResult<T>(response);
+                    return ToPageResult<T>(response, customPropertySerialization);
                 },
                 maxPerPage);
         }
-
-        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response) where T : class
+        
+        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response, IReadOnlyCollection<Expression<Func<T, object>>> customPropertySerialization) where T : class
         {
             return Page<T>.FromValues(
-                TableEntityAdapter<T>.ToEntityList(response.Entities),
+                TableEntityAdapter<T>.ToEntityList(response.Entities, customPropertySerialization),
                 CreateContinuationTokenFromHeaders(response.Headers),
                 response.Response);
         }
