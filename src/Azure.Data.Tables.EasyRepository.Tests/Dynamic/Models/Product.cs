@@ -6,8 +6,3 @@ public record Product(string Name, Weight Weight)
     {
     }
 };
-//{
-//    public string Name { get; set; }
-
-//    public Weight Weight { get; set; }
-//}

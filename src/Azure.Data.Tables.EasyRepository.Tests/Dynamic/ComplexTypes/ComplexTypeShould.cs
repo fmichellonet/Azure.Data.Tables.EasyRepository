@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
 {
     public class ComplexTypeShould
     {
@@ -31,7 +31,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
         {
             var product = new Product("Iron", new Weight(1500, Unit.g));
             await _repository!.AddAsync(product);
-            
+
             var retrievedProduct = await _repository.SingleAsync("I", "Iron");
 
             Assert.That(retrievedProduct, Is.EqualTo(product));
