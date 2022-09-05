@@ -18,15 +18,15 @@ namespace Azure.Data.Tables.EasyRepository
         public ETag ETag { get; set; }
 
         public TEntity OriginalEntity { get; }
-
-        public IReadOnlyCollection<IPropertySerializationInformation<TEntity>> SerializationInformations =>
-            _propertySerializationInformations.ToArray();
-
+        
         public readonly Func<TEntity, string> PartitionKeyExtractor;
 
         public readonly Func<TEntity, string> RowKeyExtractor;
+
         
-        private List<IPropertySerializationInformation<TEntity>> _propertySerializationInformations;
+        private readonly List<IPropertySerializationInformation<TEntity>> _propertySerializationInformations;
+        
+        public IReadOnlyCollection<IPropertySerializationInformation<TEntity>> SerializationInformations => _propertySerializationInformations.ToArray();
 
         public TableEntityAdapter(Func<TEntity, string> partitionKey, Func<TEntity, string> rowKey)
         {
@@ -35,12 +35,30 @@ namespace Azure.Data.Tables.EasyRepository
             _propertySerializationInformations = new List<IPropertySerializationInformation<TEntity>>();
         }
 
+        private static readonly Dictionary<string, object> GlobalSerializationInformations =
+            new Dictionary<string, object>();
+
         public TableEntityAdapter<TEntity> UseSerializerFor<TSerializer, TProperty>(Expression<Func<TEntity, TProperty>> selector)
             where TSerializer : class, ISerializer, new()
         {
+            var selectorString = GetSelectorStringRepresentation<TSerializer, TProperty>(selector);
+            if (GlobalSerializationInformations.ContainsKey(selectorString))
+            {
+                _propertySerializationInformations.Add((IPropertySerializationInformation<TEntity>)GlobalSerializationInformations[selectorString]);
+                return this;
+            }
+
             var serializationInfo = new PropertySerializationInformation<TEntity, TSerializer, TProperty>(new TSerializer(), selector);
             _propertySerializationInformations.Add(serializationInfo);
+            GlobalSerializationInformations[selectorString] = serializationInfo;
+            
             return this;
+        }
+
+        private static string GetSelectorStringRepresentation<TSerializer, TProperty>(
+            Expression<Func<TEntity, TProperty>> selector)
+        {
+            return $@"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
         }
 
         public TableEntityAdapter<TEntity> UseSerializerFor<TProperty>(Expression<Func<TEntity, TProperty>> selector)
