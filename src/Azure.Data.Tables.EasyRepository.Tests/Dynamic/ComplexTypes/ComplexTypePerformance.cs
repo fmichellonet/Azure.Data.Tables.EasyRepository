@@ -8,9 +8,8 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
 {
     public class ComplexTypePerformance
     {
-        //private DynamicTableRepository<Product>? _repository;
-        private TableServiceClient _serviceClient;
-        private TableConfiguration _tableConfig;
+        private TableServiceClient? _serviceClient;
+        private TableConfiguration? _tableConfig;
 
         [OneTimeSetUp]
         public void OneTime()
@@ -20,15 +19,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
             var repository = new DynamicTableRepository<Product>(_serviceClient, _tableConfig, BuildAdapter());
             repository.CreateTableAsync();
         }
-
-        //private DynamicTableRepository<Product>? BuildRepository()
-        //{
-        //    var adapter = new TableEntityAdapter<Product>(x => x.Name[..1], x => x.Name);
-        //    adapter.UseSerializerFor(x => x.Weight);
-        //    return new DynamicTableRepository<Product>(_serviceClient, _tableConfig, adapter);
-        //}
-
-        private TableEntityAdapter<Product> BuildAdapter()
+        private static TableEntityAdapter<Product> BuildAdapter()
         {
             var adapter = new TableEntityAdapter<Product>(x => x.Name[..1], x => x.Name);
             adapter.UseSerializerFor(x => x.Weight);
