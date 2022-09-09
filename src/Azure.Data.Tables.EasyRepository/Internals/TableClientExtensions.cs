@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
+using Azure.Data.Tables.EasyRepository.Serialization;
 using Azure.Data.Tables.Models;
 using Dynamitey;
 
@@ -13,6 +14,7 @@ namespace Azure.Data.Tables.EasyRepository.Internals
             Expression<Func<TableEntityAdapter<T>, bool>>? filter = null,
             int? maxPerPage = null,
             IEnumerable<string> select = null,
+            IReadOnlyCollection<IPropertySerializationInformation<T>> serializationInformations = null,
             CancellationToken cancellationToken = default) where T : class, new()
         {
             return PageableHelpers.CreateEnumerable<T>(
@@ -22,7 +24,7 @@ namespace Azure.Data.Tables.EasyRepository.Internals
 
                     var response = (QueryResponseWithHeader)QueryEntities(tableClient, queryOptions, cancellationToken: cancellationToken);
                     
-                    return ToPageResult<T>(response);
+                    return ToPageResult<T>(response, serializationInformations);
                 },
                 (continuationToken, pageSizeHint) =>
                 {
@@ -34,15 +36,15 @@ namespace Azure.Data.Tables.EasyRepository.Internals
                     var response = QueryEntities(tableClient, queryOptions, NextPartitionKey, NextRowKey,
                         cancellationToken);
 
-                    return ToPageResult<T>(response);
+                    return ToPageResult<T>(response, serializationInformations);
                 },
                 maxPerPage);
         }
-
-        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response) where T : class
+        
+        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response, IReadOnlyCollection<IPropertySerializationInformation<T>> serializationInformations) where T : class
         {
             return Page<T>.FromValues(
-                TableEntityAdapter<T>.ToEntityList(response.Entities),
+                TableEntityAdapter<T>.ToEntityList(response.Entities, serializationInformations),
                 CreateContinuationTokenFromHeaders(response.Headers),
                 response.Response);
         }

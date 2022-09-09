@@ -44,7 +44,7 @@ namespace Azure.Data.Tables.EasyRepository
         
         public Task<IReadOnlyList<TTableEntity>> WhereAsync(Expression<Func<TableEntityAdapter<TTableEntity>, bool>>? filter, int? pageSize = null, CancellationToken cancellationToken = default)
         {
-            var pagedQuery = _tableClient.Query(filter, pageSize, cancellationToken: cancellationToken);
+            var pagedQuery = _tableClient.Query(filter, pageSize, serializationInformations: _tableEntityAdapter.SerializationInformations, cancellationToken: cancellationToken);
 
             var entities = new List<TTableEntity>();
             foreach (var page in pagedQuery.AsPages(pageSizeHint: pageSize))
