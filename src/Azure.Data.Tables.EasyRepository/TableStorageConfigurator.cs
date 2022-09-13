@@ -33,15 +33,23 @@ namespace Azure.Data.Tables.EasyRepository
             return this;
         }
 
-        public IDataTableConfiguration AddRepositoryFor<TEntity>(Func<TEntity, string> partitionKeySelector,
+        public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(Func<TEntity, string> partitionKeySelector,
             Func<TEntity, string> rowKeySelector) where TEntity : class, new()
+        {
+            return AddDynamicRepositoryFor(
+                new TableConfiguration(TableNameResolver.GetTableNameFor<TEntity>()),
+                new TableEntityAdapter<TEntity>(partitionKeySelector, rowKeySelector));
+        }
+
+        public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(ITableConfiguration tableConfiguration, TableEntityAdapter<TEntity> tableAdapter)
+            where TEntity : class, new()
         {
             _services.AddTransient<IDynamicTableRepository<TEntity>>(sp =>
             {
                 var repo = new DynamicTableRepository<TEntity>(
-                    sp.GetRequiredService<TableServiceClient>(),
-                    new TableConfiguration(TableNameResolver.GetTableNameFor<TEntity>()),
-                    new TableEntityAdapter<TEntity>(partitionKeySelector, rowKeySelector));
+                            sp.GetRequiredService<TableServiceClient>(),
+                            tableConfiguration,
+                            tableAdapter);
 
                 _configuredRepositories.Add(repo);
 
@@ -50,7 +58,7 @@ namespace Azure.Data.Tables.EasyRepository
 
             return this;
         }
-
+        
         public Task EnsureTablesExistAsync(CancellationToken cancellationToken = default)
         {
             return Task.WhenAll(_configuredRepositories.Select(x => x.CreateTableAsync(cancellationToken)));
