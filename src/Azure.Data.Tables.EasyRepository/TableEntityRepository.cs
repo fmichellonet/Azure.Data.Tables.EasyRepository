@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Data.Tables.EasyRepository.Collections;
 
 namespace Azure.Data.Tables.EasyRepository
 {
@@ -101,7 +102,8 @@ namespace Azure.Data.Tables.EasyRepository
         protected override IReadOnlyCollection<IGrouping<string, TTableEntity>> CreateTransactionGroups(
             IEnumerable<TTableEntity> items)
         {
-            return items.GroupBy(x => x.PartitionKey).ToArray();
+            return items.GroupByBucket(x => x.PartitionKey, (pkey, incr) => $"{pkey}_{incr}", DefaultTransactionGroupSize)
+                .ToArray();
         }
 
         protected override KeyValuePair<string, TableTransactionAction[]> AsTransactionAction(IGrouping<string, TTableEntity> transaction, TableTransactionActionType actionType)

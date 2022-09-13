@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Data.Tables.EasyRepository.Collections;
 using Azure.Data.Tables.EasyRepository.Internals;
 
 namespace Azure.Data.Tables.EasyRepository
@@ -96,10 +97,10 @@ namespace Azure.Data.Tables.EasyRepository
             return ExecuteRange(items, TableTransactionActionType.UpdateMerge, cancellationToken);
         }
 
-        protected override IReadOnlyCollection<IGrouping<string, TTableEntity>> CreateTransactionGroups(
-            IEnumerable<TTableEntity> items)
+        protected override IReadOnlyCollection<IGrouping<string, TTableEntity>> CreateTransactionGroups(IEnumerable<TTableEntity> items)
         {
-            return items.GroupBy(x => _tableEntityAdapter.PartitionKeyExtractor(x)).ToArray();
+            return items.GroupByBucket(x => _tableEntityAdapter.PartitionKeyExtractor(x), (pkey, incr) => $"{pkey}_{incr}", DefaultTransactionGroupSize)
+                .ToArray();
         }
 
         protected override KeyValuePair<string, TableTransactionAction[]> AsTransactionAction(IGrouping<string, TTableEntity> transaction, TableTransactionActionType actionType)

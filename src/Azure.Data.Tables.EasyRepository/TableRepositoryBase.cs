@@ -28,6 +28,7 @@ namespace Azure.Data.Tables.EasyRepository
 
     public abstract class TableRepositoryBase
     {
+        public const int DefaultTransactionGroupSize = 100;
         protected readonly TableClient TableClient;
         
         protected internal TableRepositoryBase(TableServiceClient tableServiceClient, string tableName)

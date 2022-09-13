@@ -22,11 +22,13 @@ namespace Azure.Data.Tables.EasyRepository
         public readonly Func<TEntity, string> PartitionKeyExtractor;
 
         public readonly Func<TEntity, string> RowKeyExtractor;
-
         
         private readonly List<IPropertySerializationInformation<TEntity>> _propertySerializationInformations;
         
-        public IReadOnlyCollection<IPropertySerializationInformation<TEntity>> SerializationInformations => _propertySerializationInformations.ToArray();
+        internal IReadOnlyCollection<IPropertySerializationInformation<TEntity>> SerializationInformations => _propertySerializationInformations.ToArray();
+
+        private static readonly Dictionary<string, object> GlobalSerializationInformations =
+            new Dictionary<string, object>();
 
         public TableEntityAdapter(Func<TEntity, string> partitionKey, Func<TEntity, string> rowKey)
         {
@@ -34,10 +36,7 @@ namespace Azure.Data.Tables.EasyRepository
             RowKeyExtractor = rowKey;
             _propertySerializationInformations = new List<IPropertySerializationInformation<TEntity>>();
         }
-
-        private static readonly Dictionary<string, object> GlobalSerializationInformations =
-            new Dictionary<string, object>();
-
+        
         public TableEntityAdapter<TEntity> UseSerializerFor<TSerializer, TProperty>(Expression<Func<TEntity, TProperty>> selector)
             where TSerializer : class, ISerializer, new()
         {
@@ -55,24 +54,37 @@ namespace Azure.Data.Tables.EasyRepository
             return this;
         }
 
+        public TableEntityAdapter<TEntity> UseSerializerFor<TProperty>(Expression<Func<TEntity, TProperty>> selector)
+        {
+            return UseSerializerFor<DefaultJsonSerializer, TProperty>(selector);
+        }
+        
+        internal static IReadOnlyList<TEntity> ToEntityList(IReadOnlyCollection<IDictionary<string, object>> dictionary,
+            IReadOnlyCollection<IPropertySerializationInformation<TEntity>> serializationInformations)
+        {
+            return dictionary.Select(x => ToEntity(x, serializationInformations)).ToArray();
+        }
+
+        internal TableEntity Wrap(TEntity item)
+        {
+            var dict = new Dictionary<string, object>(ToDictionary(item))
+                {
+                    { nameof(PartitionKey), PartitionKeyExtractor(item) },
+                    { nameof(RowKey), RowKeyExtractor(item) },
+                    { nameof(Timestamp), DateTimeOffset.Now }
+                }.StripComplexTypes(_propertySerializationInformations)
+                .SerializeComplexType(_propertySerializationInformations, item);
+
+            return new TableEntity(dict);
+        }
+
         private static string GetSelectorStringRepresentation<TSerializer, TProperty>(
             Expression<Func<TEntity, TProperty>> selector)
         {
             return $@"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
         }
 
-        public TableEntityAdapter<TEntity> UseSerializerFor<TProperty>(Expression<Func<TEntity, TProperty>> selector)
-        {
-            return UseSerializerFor<DefaultJsonSerializer, TProperty>(selector);
-        }
-
-        public static IReadOnlyList<TEntity> ToEntityList(IReadOnlyCollection<IDictionary<string, object>> dictionary,
-            IReadOnlyCollection<IPropertySerializationInformation<TEntity>> serializationInformations)
-        {
-            return dictionary.Select(x => ToEntity(x, serializationInformations)).ToArray();
-        }
-
-        public static TEntity ToEntity(IDictionary<string, object> dictionary, IReadOnlyCollection<IPropertySerializationInformation<TEntity>> serializationInformations)
+        private static TEntity ToEntity(IDictionary<string, object> dictionary, IReadOnlyCollection<IPropertySerializationInformation<TEntity>> serializationInformations)
         {
             var tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
             var deserializeMethodName = "Deserialize";
@@ -86,7 +98,7 @@ namespace Azure.Data.Tables.EasyRepository
             return entity;
         }
 
-        public static IDictionary<string, object> ToDictionary(TEntity entity)
+        private static IDictionary<string, object> ToDictionary(TEntity entity)
         {
             var dictionaryTableExtensionsTypeName = "Azure.Data.Tables.TableEntityExtensions";
             var methodName = "ToOdataAnnotatedDictionary";
@@ -96,19 +108,6 @@ namespace Azure.Data.Tables.EasyRepository
 
             return Dynamic.InvokeMember(InvokeContext.CreateStatic(dictionaryTableExtensionsType),
                 new InvokeMemberName(methodName, typeof(TEntity)), entity);
-        }
-
-        public TableEntity Wrap(TEntity item)
-        {
-            var dict = new Dictionary<string, object>(ToDictionary(item))
-                {
-                    { nameof(PartitionKey), PartitionKeyExtractor(item) },
-                    { nameof(RowKey), RowKeyExtractor(item) },
-                    { nameof(Timestamp), DateTimeOffset.Now }
-                }.StripComplexTypes(_propertySerializationInformations)
-                .SerializeComplexType(_propertySerializationInformations, item);
-
-            return new TableEntity(dict);
         }
     }
 }
