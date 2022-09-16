@@ -14,7 +14,8 @@ namespace Azure.Data.Tables.EasyRepository.Internals
             Expression<Func<TableEntityAdapter<T>, bool>>? filter = null,
             int? maxPerPage = null,
             IEnumerable<string> select = null,
-            IReadOnlyCollection<IPropertySerializationInformation<T>> serializationInformations = null,
+            IReadOnlyCollection<IPropertySerializer<T>> serializationInformations = null,
+            IReadOnlyCollection<IPropertyFlattener<T>> flatteningInformation = null,
             CancellationToken cancellationToken = default) where T : class, new()
         {
             return PageableHelpers.CreateEnumerable<T>(
@@ -24,7 +25,7 @@ namespace Azure.Data.Tables.EasyRepository.Internals
 
                     var response = (QueryResponseWithHeader)QueryEntities(tableClient, queryOptions, cancellationToken: cancellationToken);
                     
-                    return ToPageResult<T>(response, serializationInformations);
+                    return ToPageResult<T>(response, serializationInformations, flatteningInformation);
                 },
                 (continuationToken, pageSizeHint) =>
                 {
@@ -36,15 +37,17 @@ namespace Azure.Data.Tables.EasyRepository.Internals
                     var response = QueryEntities(tableClient, queryOptions, NextPartitionKey, NextRowKey,
                         cancellationToken);
 
-                    return ToPageResult<T>(response, serializationInformations);
+                    return ToPageResult<T>(response, serializationInformations, flatteningInformation);
                 },
                 maxPerPage);
         }
         
-        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response, IReadOnlyCollection<IPropertySerializationInformation<T>> serializationInformations) where T : class
+        private static Page<T> ToPageResult<T>(QueryResponseWithHeader response, 
+            IReadOnlyCollection<IPropertySerializer<T>> serializationInformation,
+            IReadOnlyCollection<IPropertyFlattener<T>> flatteningInformation) where T : class
         {
             return Page<T>.FromValues(
-                TableEntityAdapter<T>.ToEntityList(response.Entities, serializationInformations),
+                TableEntityAdapter<T>.ToEntityList(response.Entities, serializationInformation, flatteningInformation),
                 CreateContinuationTokenFromHeaders(response.Headers),
                 response.Response);
         }

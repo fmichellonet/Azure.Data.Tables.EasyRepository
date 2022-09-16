@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Azure.Data.Tables.EasyRepository.Serialization
 {
-    internal class PropertySerializationInformation<TEntity, TSerializer, TProperty> : IPropertySerializationInformation<TEntity>
+    internal class PropertySerializer<TEntity, TSerializer, TProperty> : IPropertySerializer<TEntity>
         where TEntity : class
         where TSerializer : class, ISerializer
     {
@@ -12,7 +12,7 @@ namespace Azure.Data.Tables.EasyRepository.Serialization
         private readonly PropertyInfo _propertyInfo;
         private readonly Func<TEntity, TProperty> _propertyDelegate;
 
-        public PropertySerializationInformation(TSerializer serializer,
+        public PropertySerializer(TSerializer serializer,
             Expression<Func<TEntity, TProperty>> propertySelector)
         {
             _serializer = serializer;
