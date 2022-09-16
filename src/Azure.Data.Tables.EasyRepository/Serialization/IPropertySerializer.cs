@@ -1,6 +1,6 @@
 ﻿namespace Azure.Data.Tables.EasyRepository.Serialization
 {
-    public interface IPropertySerializationInformation<TEntity>
+    public interface IPropertySerializer<TEntity>
         where TEntity : class
     {
         string PropertyName { get; }
