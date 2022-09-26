@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using Azure.Data.Tables.EasyRepository.Serialization;
 using Dynamitey;
 
+[assembly: InternalsVisibleTo("Azure.Data.Tables.EasyRepository.Tests")]
 namespace Azure.Data.Tables.EasyRepository
 {
     public class TableEntityAdapter<TEntity> : ITableEntity where TEntity : class
@@ -36,7 +38,23 @@ namespace Azure.Data.Tables.EasyRepository
 
         private static readonly Dictionary<string, object> GlobalFlatteners =
             new Dictionary<string, object>();
-        
+
+        private static readonly Lazy<Func<IDictionary<string, object>, TEntity>> DeserializeWithTablesTypeBinder =
+            new Lazy<Func<IDictionary<string, object>, TEntity>>(() =>
+            {
+                const string tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
+                var tablesTypeBinderType = typeof(TableEntity).Assembly.GetType(tablesTypeBinderTypeName);
+
+                var binder = Dynamic.InvokeConstructor(tablesTypeBinderType);
+
+                const string deserializeMethodName = "Deserialize";
+
+                var invocation = new CacheableInvocation(InvocationKind.InvokeMember,
+                    new InvokeMemberName(deserializeMethodName, typeof(TEntity)),
+                    argCount: 1, context: binder.GetType());
+
+                return dictionary => invocation.Invoke(binder, dictionary);
+            });
 
         public TableEntityAdapter(Func<TEntity, string> partitionKey, Func<TEntity, string> rowKey)
         {
@@ -117,25 +135,20 @@ namespace Azure.Data.Tables.EasyRepository
         {
             return $@"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
         }
-
-        private static TEntity ToEntity(IDictionary<string, object> dictionary, 
+        
+        private static TEntity ToEntity(IDictionary<string, object> dictionary,
             IReadOnlyCollection<IPropertySerializer<TEntity>> serializationInformation,
             IReadOnlyCollection<IPropertyFlattener<TEntity>> flatteningInformation)
         {
-            var tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
-            var deserializeMethodName = "Deserialize";
-            var tablesTypeBinderType = typeof(TableEntity).Assembly.GetType(tablesTypeBinderTypeName);
+            var entity = DeserializeWithTablesTypeBinder.Value(dictionary);
 
-            var binder = Dynamic.InvokeConstructor(tablesTypeBinderType);
-            TEntity entity = Dynamic.InvokeMember(binder, new InvokeMemberName(deserializeMethodName, typeof(TEntity)), dictionary);
-            
             dictionary.DeserializeComplexType(serializationInformation, entity);
 
             dictionary.AggregateComplexType(flatteningInformation, entity);
 
             return entity;
         }
-
+        
         private static IDictionary<string, object> ToDictionary(TEntity entity)
         {
             var dictionaryTableExtensionsTypeName = "Azure.Data.Tables.TableEntityExtensions";
