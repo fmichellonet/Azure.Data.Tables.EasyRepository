@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.TableEntityAdapter
 {
-    public class ComplexTypePerformance
+    public class ConstructorShould
     {
         private TableServiceClient? _serviceClient;
         private TableConfiguration? _tableConfig;
@@ -15,7 +15,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
         public void OneTime()
         {
             _serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
-            _tableConfig = new TableConfiguration(nameof(ComplexTypePerformance));
+            _tableConfig = new TableConfiguration(nameof(ConstructorShould));
             var repository = new DynamicTableRepository<Product>(_serviceClient, _tableConfig, BuildAdapter());
             repository.CreateTableAsync();
         }
@@ -40,7 +40,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
         /// <param name="count"></param>
         [Explicit]
         [TestCase(100000)]
-        public void MeasureAdapterBuildingTime(int count)
+        public void TakeLittleTime(int count)
         {
             var sw = Stopwatch.StartNew();
             for (var i = 0; i < count; i++)
