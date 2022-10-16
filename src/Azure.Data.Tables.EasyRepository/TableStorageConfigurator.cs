@@ -10,7 +10,7 @@ namespace Azure.Data.Tables.EasyRepository
     public class DataTableConfiguration : IDataTableConfiguration
     {
         private readonly IServiceCollection _services;
-        private readonly List<TableRepositoryBase> _configuredRepositories = new List<TableRepositoryBase>();
+        private static readonly List<Type> ConfiguredRepositories = new List<Type>();
 
         public DataTableConfiguration(IServiceCollection services)
         {
@@ -19,13 +19,13 @@ namespace Azure.Data.Tables.EasyRepository
         
         public IDataTableConfiguration AddRepositoryFor<TEntity>() where TEntity : class, ITableEntity, new()
         {
+            ConfiguredRepositories.Add(typeof(ITableEntityRepository<TEntity>));
+
             _services.AddTransient<ITableEntityRepository<TEntity>>(sp =>
             {
                 var repo = new TableEntityRepository<TEntity>(
                     sp.GetRequiredService<TableServiceClient>(),
                     new TableConfiguration(TableNameResolver.GetTableNameFor<TEntity>()));
-
-                _configuredRepositories.Add(repo);
 
                 return repo;
             });
@@ -44,14 +44,14 @@ namespace Azure.Data.Tables.EasyRepository
         public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(ITableConfiguration tableConfiguration, TableEntityAdapter<TEntity> tableAdapter)
             where TEntity : class, new()
         {
+            ConfiguredRepositories.Add(typeof(IDynamicTableRepository<TEntity>));
+
             _services.AddTransient<IDynamicTableRepository<TEntity>>(sp =>
             {
                 var repo = new DynamicTableRepository<TEntity>(
-                            sp.GetRequiredService<TableServiceClient>(),
-                            tableConfiguration,
-                            tableAdapter);
-
-                _configuredRepositories.Add(repo);
+                    sp.GetRequiredService<TableServiceClient>(),
+                    tableConfiguration,
+                    tableAdapter);
 
                 return repo;
             });
@@ -59,9 +59,9 @@ namespace Azure.Data.Tables.EasyRepository
             return this;
         }
         
-        public Task EnsureTablesExistAsync(CancellationToken cancellationToken = default)
+        public static Task EnsureTablesExistAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
-            return Task.WhenAll(_configuredRepositories.Select(x => x.CreateTableAsync(cancellationToken)));
+            return Task.WhenAll(ConfiguredRepositories.Select(x => ((TableRepositoryBase)serviceProvider.GetService(x)).CreateTableAsync(cancellationToken)));
         }
     }
 }
