@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Azure.Data.Tables.EasyRepository
 {
@@ -13,7 +11,5 @@ namespace Azure.Data.Tables.EasyRepository
 
         IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(ITableConfiguration tableConfiguration, TableEntityAdapter<TEntity> tableAdapter)
             where TEntity : class, new();
-
-        Task EnsureTablesExistAsync(CancellationToken cancellationToken = default);
     }
 }
