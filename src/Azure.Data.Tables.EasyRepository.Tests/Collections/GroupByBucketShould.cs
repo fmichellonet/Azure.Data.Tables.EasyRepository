@@ -3,14 +3,13 @@ using System.Linq;
 using Azure.Data.Tables.EasyRepository.Collections;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Collections
+namespace Azure.Data.Tables.EasyRepository.Tests.Collections;
+
+public class GroupByBucketShould
 {
-    
-    public class GroupByBucketShould
+    [Test]
+    public void ComputeCorrectBuckets()
     {
-        [Test]
-        public void ComputeCorrectBuckets()
-        {
             var all = Enumerable.Range(1, 100).Select(x => x.ToString()).ToList();
 
             IEnumerable<IGrouping<string, string>> res = all.GroupByBucket(x => x.Length.ToString(), (src, increment) => $"+{increment}_{src}", 10);
@@ -29,5 +28,4 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Collections
             Assert.That(dictionary.ContainsKey("+8_2"), Is.True); // 90-99
             Assert.That(dictionary.ContainsKey("3"), Is.True); // 1
         }
-    }
 }

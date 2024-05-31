@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
-{
-    public class DynamicDeleteRangeAsyncShould
-    {
-        private DynamicTableRepository<Car>? _repository;
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic;
 
-        [OneTimeSetUp]
-        public void OneTime()
-        {
+public class DynamicDeleteRangeAsyncShould
+{
+    private DynamicTableRepository<Car>? _repository;
+
+    [OneTimeSetUp]
+    public void OneTime()
+    {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(DynamicDeleteRangeAsyncShould));
             _repository = new DynamicTableRepository<Car>(serviceClient, tableConfig, 
@@ -20,9 +20,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task TearDown()
-        {
+    [SetUp]
+    public async Task TearDown()
+    {
             await _repository!.TruncateAsync();
             await _repository!.AddRangeAsync(new[]
             {
@@ -32,15 +32,15 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             });
         }
 
-        [Test]
-        public void Does_Not_Throws_When_Removing_Zero_Elements()
-        {
+    [Test]
+    public void Does_Not_Throws_When_Removing_Zero_Elements()
+    {
             Assert.That(async () => await _repository!.DeleteRangeAsync(new List<Car>()), Throws.Nothing);
         }
 
-        [Test]
-        public void Remove_One_Element()
-        {
+    [Test]
+    public void Remove_One_Element()
+    {
             Assert.Multiple(async () =>
             {
                 Assert.That(async () => await _repository!.DeleteRangeAsync(new[]
@@ -53,9 +53,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             });
         }
 
-        [Test]
-        public void Remove_Multiple_Elements_On_Same_Partition()
-        {
+    [Test]
+    public void Remove_Multiple_Elements_On_Same_Partition()
+    {
             Assert.Multiple(async () =>
             {
                 Assert.That(async () => await _repository!.DeleteRangeAsync(new[]
@@ -69,9 +69,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             });
         }
 
-        [Test]
-        public void Remove_Multiple_Elements_On_Different_Partition()
-        {
+    [Test]
+    public void Remove_Multiple_Elements_On_Different_Partition()
+    {
             Assert.Multiple(async () =>
             {
                 Assert.That(async () => await _repository!.DeleteRangeAsync(new[]
@@ -85,5 +85,4 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
                 Assert.That(result.Single().Model, Is.EqualTo("XC60"));
             });
         }
-    }
 }

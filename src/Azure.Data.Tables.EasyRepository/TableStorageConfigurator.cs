@@ -5,20 +5,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Azure.Data.Tables.EasyRepository
-{
-    public class DataTableConfiguration : IDataTableConfiguration
-    {
-        private readonly IServiceCollection _services;
-        private static readonly List<Type> ConfiguredRepositories = new List<Type>();
+namespace Azure.Data.Tables.EasyRepository;
 
-        public DataTableConfiguration(IServiceCollection services)
-        {
+public class DataTableConfiguration : IDataTableConfiguration
+{
+    private readonly IServiceCollection _services;
+    private static readonly List<Type> ConfiguredRepositories = new List<Type>();
+
+    public DataTableConfiguration(IServiceCollection services)
+    {
             _services = services;
         }
         
-        public IDataTableConfiguration AddRepositoryFor<TEntity>() where TEntity : class, ITableEntity, new()
-        {
+    public IDataTableConfiguration AddRepositoryFor<TEntity>() where TEntity : class, ITableEntity, new()
+    {
             ConfiguredRepositories.Add(typeof(ITableEntityRepository<TEntity>));
 
             _services.AddTransient<ITableEntityRepository<TEntity>>(sp =>
@@ -33,17 +33,17 @@ namespace Azure.Data.Tables.EasyRepository
             return this;
         }
 
-        public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(Func<TEntity, string> partitionKeySelector,
-            Func<TEntity, string> rowKeySelector) where TEntity : class, new()
-        {
+    public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(Func<TEntity, string> partitionKeySelector,
+        Func<TEntity, string> rowKeySelector) where TEntity : class, new()
+    {
             return AddDynamicRepositoryFor(
                 new TableConfiguration(TableNameResolver.GetTableNameFor<TEntity>()),
                 new TableEntityAdapter<TEntity>(partitionKeySelector, rowKeySelector));
         }
 
-        public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(ITableConfiguration tableConfiguration, TableEntityAdapter<TEntity> tableAdapter)
-            where TEntity : class, new()
-        {
+    public IDataTableConfiguration AddDynamicRepositoryFor<TEntity>(ITableConfiguration tableConfiguration, TableEntityAdapter<TEntity> tableAdapter)
+        where TEntity : class, new()
+    {
             ConfiguredRepositories.Add(typeof(IDynamicTableRepository<TEntity>));
 
             _services.AddTransient<IDynamicTableRepository<TEntity>>(sp =>
@@ -59,9 +59,8 @@ namespace Azure.Data.Tables.EasyRepository
             return this;
         }
         
-        public static Task EnsureTablesExistAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
-        {
+    public static Task EnsureTablesExistAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    {
             return Task.WhenAll(ConfiguredRepositories.Select(x => ((TableRepositoryBase)serviceProvider.GetService(x)).CreateTableAsync(cancellationToken)));
         }
-    }
 }

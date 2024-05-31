@@ -2,17 +2,17 @@
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic;
+
+[TestFixture]
+public class DynamicToListAsyncShould
 {
-    [TestFixture]
-    public class DynamicToListAsyncShould
+
+    private DynamicTableRepository<Car> _repository;
+
+    [OneTimeSetUp]
+    public void OneTime()
     {
-
-        private DynamicTableRepository<Car> _repository;
-
-        [OneTimeSetUp]
-        public void OneTime()
-        {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(DynamicToListAsyncShould));
             _repository = new DynamicTableRepository<Car>(serviceClient, tableConfig,
@@ -20,9 +20,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task SetUp()
-        {
+    [SetUp]
+    public async Task SetUp()
+    {
             await _repository!.TruncateAsync();
             await _repository!.AddRangeAsync(new[]
             {
@@ -31,12 +31,11 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic
             });
         }
         
-        [Test]
-        public async Task Returns_All_Elements()
-        {
+    [Test]
+    public async Task Returns_All_Elements()
+    {
             var res = await _repository.ToListAsync();
 
             Assert.That(res.Count, Is.EqualTo(2));
         }
-    }
 }

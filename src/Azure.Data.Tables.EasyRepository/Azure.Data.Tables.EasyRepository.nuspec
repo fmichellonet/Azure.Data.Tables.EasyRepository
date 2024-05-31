@@ -13,9 +13,9 @@
     <repository type="git" url="https://github.com/fmichellonet/Azure.Data.Tables.EasyRepository.git" />
     <dependencies>
       <group targetFramework="netstandard2.1">
-        <dependency id="Azure.Data.Tables" version="12.6.0" exclude="Build,Analyzers" />
-        <dependency id="Dynamitey" version="2.0.10.189" exclude="Build,Analyzers" />
-        <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="6.0.0" exclude="Build,Analyzers" />
+        <dependency id="Azure.Data.Tables" version="12.8.3" exclude="Build,Analyzers" />
+        <dependency id="Dynamitey" version="3.0.3" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="8.0.1" exclude="Build,Analyzers" />
       </group>
     </dependencies>
   </metadata>

@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Azure.Data.Tables.EasyRepository.Collections
+namespace Azure.Data.Tables.EasyRepository.Collections;
+
+public static class GroupByBucketExtension
 {
-    public static class GroupByBucketExtension
+    public static IEnumerable<IGrouping<TKey, TSource>> GroupByBucket<TSource, TKey>(this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector, Func<TKey, int, TKey> keyIncrementer, int bucketSize)
     {
-        public static IEnumerable<IGrouping<TKey, TSource>> GroupByBucket<TSource, TKey>(this IEnumerable<TSource> source,
-            Func<TSource, TKey> keySelector, Func<TKey, int, TKey> keyIncrementer, int bucketSize)
-        {
             var result = new List<IGrouping<TKey, TSource>>();
             var groups = source.GroupBy(keySelector);
             foreach (var group in groups)
@@ -28,5 +28,4 @@ namespace Azure.Data.Tables.EasyRepository.Collections
                 return idx == 0 ? group.Key : keyIncrementer(group.Key, idx);
             }
         }
-    }
 }

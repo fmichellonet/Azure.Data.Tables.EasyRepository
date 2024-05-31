@@ -7,16 +7,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Data.Tables.EasyRepository.Collections;
 
-namespace Azure.Data.Tables.EasyRepository
+namespace Azure.Data.Tables.EasyRepository;
+
+public class TableEntityRepository<TTableEntity> : TableRepositoryBase<TTableEntity>, ITableEntityRepository<TTableEntity>
+    where TTableEntity : class, ITableEntity, new()
 {
-    public class TableEntityRepository<TTableEntity> : TableRepositoryBase<TTableEntity>, ITableEntityRepository<TTableEntity>
-        where TTableEntity : class, ITableEntity, new()
+
+    public TableEntityRepository(TableServiceClient tableServiceClient, ITableConfiguration tableConfiguration) : base(tableServiceClient, tableConfiguration.TableName) {}
+
+    public async Task<IReadOnlyList<TTableEntity>> WhereAsync(Expression<Func<TTableEntity, bool>>? filter, int? pageSize = null, CancellationToken cancellationToken = default)
     {
-
-        public TableEntityRepository(TableServiceClient tableServiceClient, ITableConfiguration tableConfiguration) : base(tableServiceClient, tableConfiguration.TableName) {}
-
-        public async Task<IReadOnlyList<TTableEntity>> WhereAsync(Expression<Func<TTableEntity, bool>>? filter, int? pageSize = null, CancellationToken cancellationToken = default)
-        {
             AsyncPageable<TTableEntity>? pagedQuery;
             if (filter is null)
             {
@@ -36,8 +36,8 @@ namespace Azure.Data.Tables.EasyRepository
             return entities;
         }
         
-        public async Task<TTableEntity> SingleAsync(string partitionKey, string rowKey, CancellationToken cancellationToken = default)
-        {
+    public async Task<TTableEntity> SingleAsync(string partitionKey, string rowKey, CancellationToken cancellationToken = default)
+    {
             var item = await SingleOrDefaultAsync(partitionKey, rowKey, cancellationToken);
 
             if (item is null)
@@ -48,8 +48,8 @@ namespace Azure.Data.Tables.EasyRepository
             return item;
         }
 
-        public async Task<TTableEntity?> SingleOrDefaultAsync(string partitionKey, string rowKey, CancellationToken cancellationToken = default)
-        {
+    public async Task<TTableEntity?> SingleOrDefaultAsync(string partitionKey, string rowKey, CancellationToken cancellationToken = default)
+    {
             try
             {
                 var result = await TableClient.GetEntityAsync<TTableEntity>(partitionKey, rowKey, cancellationToken: cancellationToken);
@@ -61,18 +61,18 @@ namespace Azure.Data.Tables.EasyRepository
             }
         }
 
-        public Task<IReadOnlyList<TTableEntity>> ToListAsync(CancellationToken cancellationToken = default)
-        {
+    public Task<IReadOnlyList<TTableEntity>> ToListAsync(CancellationToken cancellationToken = default)
+    {
             return WhereAsync(null, cancellationToken: cancellationToken);
         }
 
-        public Task AddRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
-        {
+    public Task AddRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
+    {
             return ExecuteRange(items, TableTransactionActionType.Add, cancellationToken);
         }
 
-        public async Task AddAsync(TTableEntity item, CancellationToken cancellationToken = default)
-        {
+    public async Task AddAsync(TTableEntity item, CancellationToken cancellationToken = default)
+    {
             if (item == null)
             {
                 throw new ArgumentNullException(nameof(item));
@@ -80,8 +80,8 @@ namespace Azure.Data.Tables.EasyRepository
             await TableClient.AddEntityAsync(item, cancellationToken);
         }
 
-        public Task MergeAsync(TTableEntity item, CancellationToken cancellationToken = default)
-        {
+    public Task MergeAsync(TTableEntity item, CancellationToken cancellationToken = default)
+    {
             if (item == null)
             {
                 throw new ArgumentNullException(nameof(item));
@@ -89,28 +89,27 @@ namespace Azure.Data.Tables.EasyRepository
             return TableClient.UpdateEntityAsync(item, ETag.All, TableUpdateMode.Merge, cancellationToken);
         }
 
-        public Task MergeRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
-        {
+    public Task MergeRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
+    {
             return ExecuteRange(items, TableTransactionActionType.UpdateMerge, cancellationToken);
         }
 
-        public Task DeleteRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
-        {
+    public Task DeleteRangeAsync(IEnumerable<TTableEntity> items, CancellationToken cancellationToken = default)
+    {
             return ExecuteRange(items, TableTransactionActionType.Delete, cancellationToken);
         }
 
-        protected override IReadOnlyCollection<IGrouping<string, TTableEntity>> CreateTransactionGroups(
-            IEnumerable<TTableEntity> items)
-        {
+    protected override IReadOnlyCollection<IGrouping<string, TTableEntity>> CreateTransactionGroups(
+        IEnumerable<TTableEntity> items)
+    {
             return items.GroupByBucket(x => x.PartitionKey, (pkey, incr) => $"{pkey}_{incr}", DefaultTransactionGroupSize)
                 .ToArray();
         }
 
-        protected override KeyValuePair<string, TableTransactionAction[]> AsTransactionAction(IGrouping<string, TTableEntity> transaction, TableTransactionActionType actionType)
-        {
+    protected override KeyValuePair<string, TableTransactionAction[]> AsTransactionAction(IGrouping<string, TTableEntity> transaction, TableTransactionActionType actionType)
+    {
             return new KeyValuePair<string, TableTransactionAction[]>(transaction.Key,
                 transaction.Select(x => new TableTransactionAction(actionType, x))
                     .ToArray());
         }
-    }
 }

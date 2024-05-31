@@ -2,15 +2,15 @@ using System.Threading.Tasks;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
-{
-    public class FlattenShould
-    {
-        private DynamicTableRepository<Client>? _repository;
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes;
 
-        [OneTimeSetUp]
-        public void OneTime()
-        {
+public class FlattenShould
+{
+    private DynamicTableRepository<Client>? _repository;
+
+    [OneTimeSetUp]
+    public void OneTime()
+    {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(FlattenShould));
             var adapter = new TableEntityAdapter<Client>(x => x.Name[..1], x => x.Name);
@@ -19,15 +19,15 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
             _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task TearDown()
-        {
+    [SetUp]
+    public async Task TearDown()
+    {
             await _repository!.TruncateAsync();
         }
 
-        [Test]
-        public async Task Support_Round_Trip()
-        {
+    [Test]
+    public async Task Support_Round_Trip()
+    {
             var client = new Client
             {
                 Name = "Coca Cola",
@@ -52,5 +52,4 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
                 Assert.That(retrievedClient.Address.Country, Is.EqualTo(client.Address.Country));
             }); 
         }
-    }
 }

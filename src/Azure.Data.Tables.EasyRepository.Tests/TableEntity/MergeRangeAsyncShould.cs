@@ -5,24 +5,24 @@ using Azure.Data.Tables.EasyRepository.Tests.TableEntity.Models;
 using NUnit.Framework;
 // ReSharper disable CompareOfFloatsByEqualityOperator
 
-namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
-{
-    public class MergeRangeAsyncShould
-    {
-        private TableEntityRepository<Product>? _repository;
+namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity;
 
-        [OneTimeSetUp]
-        public async Task OneTime()
-        {
+public class MergeRangeAsyncShould
+{
+    private TableEntityRepository<Product>? _repository;
+
+    [OneTimeSetUp]
+    public async Task OneTime()
+    {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(MergeRangeAsyncShould));
             _repository = new TableEntityRepository<Product>(serviceClient, tableConfig); 
             await _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task SetUp()
-        {
+    [SetUp]
+    public async Task SetUp()
+    {
             await _repository!.TruncateAsync();
 
             await _repository!.AddRangeAsync(new[]
@@ -33,16 +33,16 @@ namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
             });
         }
 
-        [Test]
-        public void Does_Not_Throws_When_Merging_Zero_Elements()
-        {
+    [Test]
+    public void Does_Not_Throws_When_Merging_Zero_Elements()
+    {
             Assert.That(async () => await _repository!.MergeRangeAsync(new List<Product>()), Throws.Nothing);
         }
 
 
-        [Test]
-        public async Task Merge_One_Element()
-        {
+    [Test]
+    public async Task Merge_One_Element()
+    {
             await _repository!.MergeRangeAsync(new[]
             {
                 new Product { PartitionKey = "treats", RowKey = "cola", Weight = 250}
@@ -52,9 +52,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
             Assert.That(retrievedProduct.Weight == 250);
         }
 
-        [Test]
-        public async Task Merge_Multiple_Elements_On_Same_Partition()
-        {
+    [Test]
+    public async Task Merge_Multiple_Elements_On_Same_Partition()
+    {
             Assert.That(async () => await _repository!.MergeRangeAsync(new[]
             {
                 new Product { PartitionKey = "treats", RowKey = "cola", Weight = 300},
@@ -66,9 +66,9 @@ namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
             Assert.That(retrievedProducts.All(x => x.Weight == 300), Is.True);
         }
 
-        [Test]
-        public async Task Merge_Multiple_Elements_On_Different_Partitions()
-        {
+    [Test]
+    public async Task Merge_Multiple_Elements_On_Different_Partitions()
+    {
             Assert.That(async () => await _repository!.MergeRangeAsync(new[]
             {
                 new Product { PartitionKey = "treats", RowKey = "cola", Weight = 300},
@@ -81,5 +81,4 @@ namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
             Assert.That(cola.Weight, Is.EqualTo(300));
             Assert.That(trouser.Weight, Is.EqualTo(2000));
         }
-    }
 }

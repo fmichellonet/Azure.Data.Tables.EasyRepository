@@ -1,12 +1,11 @@
-﻿namespace Azure.Data.Tables.EasyRepository
-{
-    public class TableConfiguration : ITableConfiguration
-    {
-        public string TableName { get; }
+﻿namespace Azure.Data.Tables.EasyRepository;
 
-        public TableConfiguration(string tableName)
-        {
+public class TableConfiguration : ITableConfiguration
+{
+    public string TableName { get; }
+
+    public TableConfiguration(string tableName)
+    {
             TableName = tableName;
         }
-    }
 }
