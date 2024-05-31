@@ -38,7 +38,6 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.TableEntityAdapter
         /// and globally accessible per Serializer / Entity / Property
         /// </summary>
         /// <param name="count"></param>
-        [Explicit]
         [TestCase(100000)]
         public void TakeLittleTime(int count)
         {

@@ -50,7 +50,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
 
             var retrievedProducts = await _repository.WhereAsync(x => x.PartitionKey == "I");
 
-            CollectionAssert.AreEquivalent(products, retrievedProducts.ToArray());
+            Assert.That(products, Is.EquivalentTo(retrievedProducts.ToArray()));
         }
     }
 }

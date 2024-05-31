@@ -9,7 +9,6 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.TableEntityAdapter
 
     public class ToEntityListShould
     {
-        [Explicit]
         [Test]
         public void Perform_under_1_second_per_100000_items()
         {
