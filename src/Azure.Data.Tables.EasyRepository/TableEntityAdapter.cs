@@ -27,19 +27,19 @@ namespace Azure.Data.Tables.EasyRepository
         public ETag ETag { get; set; }
 
         public TEntity OriginalEntity { get; }
-        
+
         public readonly Func<TEntity, string> PartitionKeyExtractor;
 
         public readonly Func<TEntity, string> RowKeyExtractor;
-        
+
         private readonly List<IPropertySerializer<TEntity>> _propertySerializers;
 
         private readonly List<IPropertyFlattener<TEntity>> _propertyFlatteners;
-        
+
         internal IReadOnlyCollection<IPropertySerializer<TEntity>> Serializers => _propertySerializers.ToArray();
 
         internal IReadOnlyCollection<IPropertyFlattener<TEntity>> Flatteners => _propertyFlatteners.ToArray();
-        
+
         private static readonly Lazy<Func<IDictionary<string, object>, TEntity>> DeserializeWithTablesTypeBinder =
             new Lazy<Func<IDictionary<string, object>, TEntity>>(() =>
             {
@@ -64,7 +64,7 @@ namespace Azure.Data.Tables.EasyRepository
             _propertySerializers = new List<IPropertySerializer<TEntity>>();
             _propertyFlatteners = new List<IPropertyFlattener<TEntity>>();
         }
-        
+
         public TableEntityAdapter<TEntity> UseSerializerFor<TSerializer, TProperty>(Expression<Func<TEntity, TProperty>> selector)
             where TSerializer : class, ISerializer, new()
         {
@@ -78,7 +78,7 @@ namespace Azure.Data.Tables.EasyRepository
             var serializationInfo = new PropertySerializer<TEntity, TSerializer, TProperty>(new TSerializer(), selector);
             _propertySerializers.Add(serializationInfo);
             GlobalSerializers[selectorString] = serializationInfo;
-            
+
             return this;
         }
 
@@ -94,7 +94,7 @@ namespace Azure.Data.Tables.EasyRepository
             if (GlobalFlatteners.TryGetValue(selectorString, out var flattener))
             {
                 _propertyFlatteners.Add((IPropertyFlattener<TEntity>)flattener);
-                
+
                 return this;
             }
 
@@ -114,7 +114,7 @@ namespace Azure.Data.Tables.EasyRepository
 
         internal TableEntity Wrap(TEntity item)
         {
-            var dict = new Dictionary<string, object>(ToDictionary(item))
+            var dict = new Dictionary<string, object>(item.ToDictionary())
                 {
                     { nameof(PartitionKey), PartitionKeyExtractor(item) },
                     { nameof(RowKey), RowKeyExtractor(item) },
@@ -137,7 +137,7 @@ namespace Azure.Data.Tables.EasyRepository
         {
             return $@"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
         }
-        
+
         private static TEntity ToEntity(IDictionary<string, object> dictionary,
             IReadOnlyCollection<IPropertySerializer<TEntity>> serializationInformation,
             IReadOnlyCollection<IPropertyFlattener<TEntity>> flatteningInformation)
@@ -149,18 +149,6 @@ namespace Azure.Data.Tables.EasyRepository
             dictionary.AggregateComplexType(flatteningInformation, entity);
 
             return entity;
-        }
-        
-        private static IDictionary<string, object> ToDictionary(TEntity entity)
-        {
-            var dictionaryTableExtensionsTypeName = "Azure.Data.Tables.TableEntityExtensions";
-            var methodName = "ToOdataAnnotatedDictionary";
-
-            var dictionaryTableExtensionsType =
-                typeof(TableClient).Assembly.GetType(dictionaryTableExtensionsTypeName);
-
-            return Dynamic.InvokeMember(InvokeContext.CreateStatic(dictionaryTableExtensionsType),
-                new InvokeMemberName(methodName, typeof(TEntity)), entity);
         }
     }
 }

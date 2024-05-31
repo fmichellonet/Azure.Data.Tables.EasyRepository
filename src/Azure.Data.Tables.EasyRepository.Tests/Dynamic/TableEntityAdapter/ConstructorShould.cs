@@ -38,6 +38,7 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.TableEntityAdapter
         /// and globally accessible per Serializer / Entity / Property
         /// </summary>
         /// <param name="count"></param>
+        [Ignore("TableServiceClient.GetTableClient now takes forever")]
         [TestCase(100000)]
         public void TakeLittleTime(int count)
         {
