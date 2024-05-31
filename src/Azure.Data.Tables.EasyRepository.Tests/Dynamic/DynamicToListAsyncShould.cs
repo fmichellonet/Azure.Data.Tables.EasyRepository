@@ -13,29 +13,29 @@ public class DynamicToListAsyncShould
     [OneTimeSetUp]
     public void OneTime()
     {
-            var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
-            var tableConfig = new TableConfiguration(nameof(DynamicToListAsyncShould));
-            _repository = new DynamicTableRepository<Car>(serviceClient, tableConfig,
-                new TableEntityAdapter<Car>(x => x.Brand[..1], x => x.Model));
-            _repository.CreateTableAsync();
-        }
+        var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
+        var tableConfig = new TableConfiguration(nameof(DynamicToListAsyncShould));
+        _repository = new DynamicTableRepository<Car>(serviceClient, tableConfig,
+            new TableEntityAdapter<Car>(x => x.Brand[..1], x => x.Model));
+        _repository.CreateTableAsync();
+    }
 
     [SetUp]
     public async Task SetUp()
     {
-            await _repository!.TruncateAsync();
-            await _repository!.AddRangeAsync(new[]
-            {
+        await _repository!.TruncateAsync();
+        await _repository!.AddRangeAsync(new[]
+        {
                 new Car() { Brand = "Volvo", Model = "XC40" },
                 new Car() { Brand = "Volvo", Model = "XC60" }
             });
-        }
-        
+    }
+
     [Test]
     public async Task Returns_All_Elements()
     {
-            var res = await _repository.ToListAsync();
+        var res = await _repository.ToListAsync();
 
-            Assert.That(res.Count, Is.EqualTo(2));
-        }
+        Assert.That(res.Count, Is.EqualTo(2));
+    }
 }

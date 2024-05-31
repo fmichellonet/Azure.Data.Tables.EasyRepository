@@ -6,6 +6,6 @@ public class TableConfiguration : ITableConfiguration
 
     public TableConfiguration(string tableName)
     {
-            TableName = tableName;
-        }
+        TableName = tableName;
+    }
 }
