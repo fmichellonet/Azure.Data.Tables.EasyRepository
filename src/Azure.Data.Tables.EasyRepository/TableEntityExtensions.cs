@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Dynamitey;
+﻿using System.Collections.Generic;
+using Azure.Data.Tables.EasyRepository.Internals;
 
 namespace Azure.Data.Tables.EasyRepository
 {
@@ -19,57 +18,12 @@ namespace Azure.Data.Tables.EasyRepository
             }
 
             var dictionary = new Dictionary<string, object>();
-            TablesTypeBinder.Shared().GetBinderInfo(typeof(T)).Serialize(entity, dictionary);
+            TablesTypeBinder
+                .Shared()
+                .GetBinderInfo<T>()
+                .Serialize(entity, dictionary);
 
             return dictionary;
-        }
-
-        private class TablesTypeBinder
-        {
-            private readonly dynamic _surrogateType;
-
-            private static TablesTypeBinder? _instance;
-
-            private TablesTypeBinder(dynamic surrogateType)
-            {
-                _surrogateType = surrogateType;
-            }
-
-            public static TablesTypeBinder Shared()
-            {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                var tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
-                var tablesTypeBinderType = typeof(TableClient).Assembly.GetType(tablesTypeBinderTypeName);
-                var propertyBackingAccessorName = "get_Shared";
-
-                var surrogate = Dynamic.InvokeMember(InvokeContext.CreateStatic(tablesTypeBinderType), propertyBackingAccessorName);
-                _instance = new TablesTypeBinder(surrogate);
-                return _instance;
-            }
-
-            public BoundTypeInfo GetBinderInfo(Type entityType)
-            {
-                var typeInfo = Dynamic.InvokeMember(_surrogateType, "GetBinderInfo", new object[] { entityType });
-                return new BoundTypeInfo(typeInfo);
-            }
-        }
-
-        private class BoundTypeInfo
-        {
-            private readonly dynamic _surrogateType;
-
-            public BoundTypeInfo(dynamic surrogateType)
-            {
-                _surrogateType = surrogateType;
-            }
-
-            public void Serialize<T>(T entity, Dictionary<string, object> dictionary)
-            {
-                Dynamic.InvokeMemberAction(_surrogateType, new InvokeMemberName(nameof(Serialize), typeof(T)), new object[] { entity, dictionary });
-            }
         }
     }
 }

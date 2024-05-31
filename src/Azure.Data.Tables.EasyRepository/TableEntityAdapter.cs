@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Azure.Data.Tables.EasyRepository.Internals;
 using Azure.Data.Tables.EasyRepository.Serialization;
-using Dynamitey;
 
 [assembly: InternalsVisibleTo("Azure.Data.Tables.EasyRepository.Tests")]
 namespace Azure.Data.Tables.EasyRepository
@@ -39,24 +39,7 @@ namespace Azure.Data.Tables.EasyRepository
         internal IReadOnlyCollection<IPropertySerializer<TEntity>> Serializers => _propertySerializers.ToArray();
 
         internal IReadOnlyCollection<IPropertyFlattener<TEntity>> Flatteners => _propertyFlatteners.ToArray();
-
-        private static readonly Lazy<Func<IDictionary<string, object>, TEntity>> DeserializeWithTablesTypeBinder =
-            new Lazy<Func<IDictionary<string, object>, TEntity>>(() =>
-            {
-                const string tablesTypeBinderTypeName = "Azure.Data.Tables.TablesTypeBinder";
-                var tablesTypeBinderType = typeof(TableEntity).Assembly.GetType(tablesTypeBinderTypeName);
-
-                var binder = Dynamic.InvokeConstructor(tablesTypeBinderType);
-
-                const string deserializeMethodName = "Deserialize";
-
-                var invocation = new CacheableInvocation(InvocationKind.InvokeMember,
-                    new InvokeMemberName(deserializeMethodName, typeof(TEntity)),
-                    argCount: 1, context: binder.GetType());
-
-                return dictionary => invocation.Invoke(binder, dictionary);
-            });
-
+        
         public TableEntityAdapter(Func<TEntity, string> partitionKey, Func<TEntity, string> rowKey)
         {
             PartitionKeyExtractor = partitionKey;
@@ -129,20 +112,23 @@ namespace Azure.Data.Tables.EasyRepository
         private static string GetSelectorStringRepresentation<TProperty>(
             Expression<Func<TEntity, TProperty>> selector)
         {
-            return $@"[{typeof(TEntity)}] : {selector}";
+            return $"[{typeof(TEntity)}] : {selector}";
         }
 
         private static string GetSelectorStringRepresentation<TSerializer, TProperty>(
             Expression<Func<TEntity, TProperty>> selector)
         {
-            return $@"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
+            return $"<{typeof(TSerializer)}> ~> [{typeof(TEntity)}] : {selector}";
         }
 
         private static TEntity ToEntity(IDictionary<string, object> dictionary,
             IReadOnlyCollection<IPropertySerializer<TEntity>> serializationInformation,
             IReadOnlyCollection<IPropertyFlattener<TEntity>> flatteningInformation)
         {
-            var entity = DeserializeWithTablesTypeBinder.Value(dictionary);
+            var entity = TablesTypeBinder
+                .Shared()
+                .GetBinderInfo<TEntity>()
+                .Deserialize(dictionary);
 
             dictionary.DeserializeComplexType(serializationInformation, entity);
 
