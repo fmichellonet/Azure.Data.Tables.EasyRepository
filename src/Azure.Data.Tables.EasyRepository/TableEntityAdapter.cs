@@ -9,7 +9,14 @@ using Dynamitey;
 [assembly: InternalsVisibleTo("Azure.Data.Tables.EasyRepository.Tests")]
 namespace Azure.Data.Tables.EasyRepository
 {
-    public class TableEntityAdapter<TEntity> : ITableEntity where TEntity : class
+    public abstract class TableEntityAdapterBase
+    {
+        protected static readonly Dictionary<string, object> GlobalSerializers = new Dictionary<string, object>();
+
+        protected static readonly Dictionary<string, object> GlobalFlatteners = new Dictionary<string, object>();
+    }
+
+    public class TableEntityAdapter<TEntity> : TableEntityAdapterBase, ITableEntity where TEntity : class
     {
         public string PartitionKey { get; set; }
 
@@ -32,13 +39,7 @@ namespace Azure.Data.Tables.EasyRepository
         internal IReadOnlyCollection<IPropertySerializer<TEntity>> Serializers => _propertySerializers.ToArray();
 
         internal IReadOnlyCollection<IPropertyFlattener<TEntity>> Flatteners => _propertyFlatteners.ToArray();
-
-        private static readonly Dictionary<string, object> GlobalSerializers =
-            new Dictionary<string, object>();
-
-        private static readonly Dictionary<string, object> GlobalFlatteners =
-            new Dictionary<string, object>();
-
+        
         private static readonly Lazy<Func<IDictionary<string, object>, TEntity>> DeserializeWithTablesTypeBinder =
             new Lazy<Func<IDictionary<string, object>, TEntity>>(() =>
             {
@@ -68,9 +69,9 @@ namespace Azure.Data.Tables.EasyRepository
             where TSerializer : class, ISerializer, new()
         {
             var selectorString = GetSelectorStringRepresentation<TSerializer, TProperty>(selector);
-            if (GlobalSerializers.ContainsKey(selectorString))
+            if (GlobalSerializers.TryGetValue(selectorString, out var propertySerializer))
             {
-                _propertySerializers.Add((IPropertySerializer<TEntity>)GlobalSerializers[selectorString]);
+                _propertySerializers.Add((IPropertySerializer<TEntity>)propertySerializer);
                 return this;
             }
 
@@ -90,15 +91,16 @@ namespace Azure.Data.Tables.EasyRepository
         {
             var selectorString = GetSelectorStringRepresentation(selector);
 
-            if (GlobalFlatteners.ContainsKey(selectorString))
+            if (GlobalFlatteners.TryGetValue(selectorString, out var flattener))
             {
-                _propertyFlatteners.Add((IPropertyFlattener<TEntity>)GlobalFlatteners[selectorString]);
+                _propertyFlatteners.Add((IPropertyFlattener<TEntity>)flattener);
+                
                 return this;
             }
 
             var flatteningInfo = new PropertyFlattener<TEntity, TProperty>(selector);
             _propertyFlatteners.Add(flatteningInfo);
-            GlobalFlatteners[selectorString] = _propertyFlatteners;
+            GlobalFlatteners[selectorString] = flatteningInfo;
 
             return this;
         }
