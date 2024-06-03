@@ -1,9 +1,8 @@
-﻿namespace Azure.Data.Tables.EasyRepository.Serialization
-{
-    public interface ISerializer
-    {
-        string Serialize<TProperty>(TProperty item);
+﻿namespace Azure.Data.Tables.EasyRepository.Serialization;
 
-        TProperty Deserialize<TProperty>(string value);
-    }
+public interface ISerializer
+{
+    string Serialize<TProperty>(TProperty item);
+
+    TProperty Deserialize<TProperty>(string value);
 }

@@ -4,14 +4,14 @@ using Azure.Data.Tables.EasyRepository.Serialization;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
+namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes;
+
+public class CustomSerializerShould
 {
-    public class CustomSerializerShould
+    private class UnitSwapperSerializer : ISerializer
     {
-        private class UnitSwapperSerializer : ISerializer
+        public string Serialize<TProperty>(TProperty item)
         {
-            public string Serialize<TProperty>(TProperty item)
-            {
                 var str = JsonSerializer.Serialize(item);
                 if (item is Weight)
                 {
@@ -21,17 +21,17 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
                 return str;
             }
             
-            public TProperty Deserialize<TProperty>(string value)
-            {
+        public TProperty Deserialize<TProperty>(string value)
+        {
                 return JsonSerializer.Deserialize<TProperty>(value);
             }
-        }
+    }
 
-        private DynamicTableRepository<Product>? _repository;
+    private DynamicTableRepository<Product>? _repository;
 
-        [OneTimeSetUp]
-        public void OneTime()
-        {
+    [OneTimeSetUp]
+    public void OneTime()
+    {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(CustomSerializerShould));
             var adapter = new TableEntityAdapter<Product>(x => x.Name[..1], x => x.Name);
@@ -40,15 +40,15 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
             _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task TearDown()
-        {
+    [SetUp]
+    public async Task TearDown()
+    {
             await _repository!.TruncateAsync();
         }
 
-        [Test]
-        public async Task Support_Custom_Serialization_Deserialization_Round_Trip()
-        {
+    [Test]
+    public async Task Support_Custom_Serialization_Deserialization_Round_Trip()
+    {
             var product = new Product("Iron", new Weight(1500, Unit.g));
             await _repository!.AddAsync(product);
 
@@ -61,5 +61,4 @@ namespace Azure.Data.Tables.EasyRepository.Tests.Dynamic.ComplexTypes
                 Assert.That(retrievedProduct.Weight.Unit, Is.EqualTo(Unit.Kg));
             }); 
         }
-    }
 }

@@ -2,26 +2,26 @@
 using Azure.Data.Tables.EasyRepository.Tests.TableEntity.Models;
 using NUnit.Framework;
 
-namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
+namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity;
+
+[TestFixture]
+public class ToListAsyncShould
 {
-    [TestFixture]
-    public class ToListAsyncShould
+
+    private TableEntityRepository<Product>? _repository;
+
+    [OneTimeSetUp]
+    public void OneTime()
     {
-
-        private TableEntityRepository<Product>? _repository;
-
-        [OneTimeSetUp]
-        public void OneTime()
-        {
             var serviceClient = new TableServiceClient("UseDevelopmentStorage=true");
             var tableConfig = new TableConfiguration(nameof(ToListAsyncShould));
             _repository = new TableEntityRepository<Product>(serviceClient, tableConfig);
             _repository.CreateTableAsync();
         }
 
-        [SetUp]
-        public async Task SetUp()
-        {
+    [SetUp]
+    public async Task SetUp()
+    {
             await _repository!.TruncateAsync();
             await _repository!.AddRangeAsync(new[]
             {
@@ -30,12 +30,11 @@ namespace Azure.Data.Tables.EasyRepository.Tests.TableEntity
             });
         }
         
-        [Test]
-        public async Task Returns_All_Elements()
-        {
+    [Test]
+    public async Task Returns_All_Elements()
+    {
             var res = await _repository!.ToListAsync();
 
             Assert.That(res.Count, Is.EqualTo(2));
         }
-    }
 }

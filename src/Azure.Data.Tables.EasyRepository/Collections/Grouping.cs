@@ -3,14 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Azure.Data.Tables.EasyRepository.Collections
-{
-    public class Grouping<TKey, TElement> : IGrouping<TKey, TElement>
-    {
-        private readonly List<TElement> _elements;
+namespace Azure.Data.Tables.EasyRepository.Collections;
 
-        public Grouping(TKey key, IEnumerable<TElement> items)
-        {
+public class Grouping<TKey, TElement> : IGrouping<TKey, TElement>
+{
+    private readonly List<TElement> _elements;
+
+    public Grouping(TKey key, IEnumerable<TElement> items)
+    {
             if (key == null)
             {
                 throw new ArgumentNullException(nameof(key));
@@ -25,14 +25,13 @@ namespace Azure.Data.Tables.EasyRepository.Collections
             _elements = items.ToList();
         }
 
-        public TKey Key { get; }
+    public TKey Key { get; }
 
-        public IEnumerator<TElement> GetEnumerator()
-        {
+    public IEnumerator<TElement> GetEnumerator()
+    {
             return _elements.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+    IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 
-    }
 }
