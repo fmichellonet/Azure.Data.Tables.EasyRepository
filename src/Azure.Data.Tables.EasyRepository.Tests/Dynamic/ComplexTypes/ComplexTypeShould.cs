@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Data.Tables.EasyRepository.Serialization;
 using Azure.Data.Tables.EasyRepository.Tests.Dynamic.Models;
 using NUnit.Framework;
 
@@ -37,7 +39,6 @@ public class ComplexTypeShould
         Assert.That(retrievedProduct, Is.EqualTo(product));
     }
 
-
     [Test]
     public async Task Support_Multiple_Elements_Round_Trip()
     {
@@ -51,5 +52,23 @@ public class ComplexTypeShould
         var retrievedProducts = await _repository.WhereAsync(x => x.PartitionKey == "I");
 
         Assert.That(products, Is.EquivalentTo(retrievedProducts.ToArray()));
+    }
+
+    [Test]
+    public void Throw_On_Missing_Data_When_Deserializing_Non_Nullable_Property()
+    {
+        // Arrange
+        var dict = new Dictionary<string, object>();
+        var propSerializer =
+            new PropertySerializer<Vegetable, DefaultJsonSerializer, List<string>>(new DefaultJsonSerializer(),
+                x => x.Colors);
+
+        // Act - Assert
+        Assert.That(() => dict.DeserializeComplexType(new[] { propSerializer },
+                new Vegetable()),
+            Throws.InstanceOf<InvalidComplexTypePropertyDeserialization<Vegetable>>()
+                .And.Message
+                .EqualTo("Property Colors of type Vegetable is not nullable, but no values found in the table"));
+
     }
 }
