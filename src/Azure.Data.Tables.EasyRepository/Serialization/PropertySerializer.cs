@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -21,6 +22,22 @@ internal class PropertySerializer<TEntity, TSerializer, TProperty> : IPropertySe
     }
 
     public string PropertyName => _propertyInfo.Name;
+
+    public bool IsNullableProperty()
+    {
+        
+        if (Nullable.GetUnderlyingType(_propertyInfo.PropertyType) != null)
+        {
+            return true; // Nullable<T>
+        }
+
+        // Check for Nullable attribute on the property
+        var nullableAttribute = _propertyInfo.CustomAttributes
+            .FirstOrDefault(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute");
+        var isNullable = nullableAttribute is { ConstructorArguments.Count: > 0 } && nullableAttribute.ConstructorArguments[0].ArgumentType == typeof(byte[]);
+
+        return isNullable;
+    }
 
     public string SerializedValue(TEntity item)
     {

@@ -6,4 +6,5 @@ public interface IPropertySerializer<TEntity>
     string PropertyName { get; }
     string SerializedValue(TEntity item);
     void SetValue(TEntity item, string value);
+    bool IsNullableProperty();
 }

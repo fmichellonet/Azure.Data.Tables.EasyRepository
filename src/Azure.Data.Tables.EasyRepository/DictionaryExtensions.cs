@@ -7,12 +7,12 @@ namespace Azure.Data.Tables.EasyRepository;
 internal static class DictionaryExtensions
 {
     internal static IDictionary<string, object> StripComplexTypes<TEntity>(
-        this IDictionary<string, object> source, 
+        this IDictionary<string, object> source,
         IReadOnlyCollection<IPropertySerializer<TEntity>> propertySerializationInformation,
-        IReadOnlyCollection<IPropertyFlattener<TEntity>> propertyFlatteningInformation) 
+        IReadOnlyCollection<IPropertyFlattener<TEntity>> propertyFlatteningInformation)
         where TEntity : class
     {
-        foreach (var customSerializedProperty in propertySerializationInformation) 
+        foreach (var customSerializedProperty in propertySerializationInformation)
         {
             if (source.ContainsKey(customSerializedProperty.PropertyName))
             {
@@ -48,7 +48,7 @@ internal static class DictionaryExtensions
 
         return source;
     }
-        
+
     internal static void DeserializeComplexType<TEntity>(
         this IDictionary<string, object> source,
         IReadOnlyCollection<IPropertySerializer<TEntity>> propertySerializationInformation,
@@ -58,10 +58,18 @@ internal static class DictionaryExtensions
         {
             return;
         }
-            
+
         foreach (var serializationInformation in propertySerializationInformation)
         {
-            serializationInformation.SetValue(item, source[serializationInformation.PropertyName].ToString());
+            if (source.TryGetValue(serializationInformation.PropertyName, out var value))
+            {
+                serializationInformation.SetValue(item, value.ToString());
+                continue;
+            }
+            if (!serializationInformation.IsNullableProperty())
+            {
+                throw new InvalidComplexTypePropertyDeserialization<TEntity>(serializationInformation.PropertyName);
+            }
         }
     }
 
